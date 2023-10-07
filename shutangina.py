@@ -1,3 +1,5 @@
+# export TERM=xterm-color
+
 import os
 import mysql.connector
 from dateutil import parser
@@ -6,9 +8,9 @@ import re
 # Connect to the MySQL database
 db = mysql.connector.connect(
     host="localhost",
-    user="root",  # name
-    password="hatdog",
-    database="haha"  # database name
+    user="root",  # your name
+    password="hatdog",  # your password
+    database="haha"  # your database name
 )
 cursor = db.cursor()
 
@@ -30,26 +32,26 @@ def classify_data(input_string):
         if validate_email(input_string):
             return 'Email Address'
         else:
-            print("Invalid email address!")
-            pause_system()
-            return 'Unknown'
-    elif input_string.isdigit():
-        if len(data_value) != 11:
-            print("Invalid cellphone number! It must be 11 digits.")
-            pause_system()
-            return 'Unknown'
+            print("Invalid email address!\nData is placed at Invalid table")
+            return 'Unknown      '
+    elif input_string.isdigit():  # add landline
+        if len(data_value) == 8:
+            return 'Landline Num'
+        elif len(data_value) != 11:
+            print("Invalid Number! It must be 8 or 11 digits.\nData is placed at Invalid table")
+            return 'Unknown      '
         else:
             return 'Cellphone Num'
-    elif input_string.replace(" ", "").isalpha():  # spaces are also read
-        return 'Name         '
+
+    elif not input_string.replace(" ", "").isalnum():  # spaces are also read
+        print("Invalid Data!\nData is placed at Invalid table")
+        return 'Unknown      '
     else:
         try:
-            parser.parse(input_string)  # dateutil format
+            parser.parse(input_string, dayfirst=True, yearfirst=True)  # dateutil format (add: DD-MM-YYY)
             return 'Date of Birth'
         except:
-            print("Invalid!")
-            pause_system()
-            return 'Unknown'
+            return 'Name         '
 
 
 # Function to validate email
@@ -63,11 +65,18 @@ def validate_email(email):
 
 # Function to insert data
 def insert_data(data_type, data_value):
-    sql = "INSERT INTO User_Data (Type, Value) VALUES (%s, %s)"
-    val = (data_type, data_value)
-    cursor.execute(sql, val)
-    db.commit()
-    return cursor.lastrowid, data_type
+    if not data_type == 'Unknown      ':
+        sql = "INSERT INTO User_Data (Type, Value) VALUES (%s, %s)"
+        val = (data_type, data_value)
+        cursor.execute(sql, val)
+        db.commit()
+        return cursor.lastrowid, data_type
+    else:
+        sql = "INSERT INTO Invalid (Type, Value) VALUES (%s, %s)"
+        val = (data_type, data_value)
+        cursor.execute(sql, val)
+        db.commit()
+        return cursor.lastrowid, data_type
 
 
 # Function to update data
@@ -81,17 +90,35 @@ def update_data(id, data_type, data_value):
 
 # Function to view all records
 def view_all_records():
-    sql = "SELECT * FROM User_Data"
-    cursor.execute(sql)
-    records = cursor.fetchall()
-    if len(records) == 0:
-        print("No records found.")
+    print("\n1. See Valid Data Table")
+    print("2. See Invalid Data Table")
+    view_choice = input("Enter your choice:")
+
+    if view_choice == "1":
+        sql = "SELECT * FROM User_Data"
+        cursor.execute(sql)
+        records = cursor.fetchall()
+        if len(records) == 0:
+            print("No records found.")
+        else:
+            print("ID\tType         \tValue")
+            for record in records:
+                print(f"{record[0]}\t{record[1]}\t{record[2]}")
+    elif view_choice == "2":
+        sql = "SELECT * FROM Invalid"
+        cursor.execute(sql)
+        records = cursor.fetchall()
+        if len(records) == 0:
+            print("No records found.")
+        else:
+            print("ID\tType         \tValue")
+            for record in records:
+                print(f"{record[0]}\t{record[1]}\t{record[2]}")
     else:
-        print("ID\tType         \tValue")
-        for record in records:
-            print(f"{record[0]}\t{record[1]}\t{record[2]}")
+        print("Invalid option. Please try again.")
 
 
+# Function to delete data
 def delete_data():
     print("1. Delete a record")
     print("2. Delete all record")
@@ -104,6 +131,7 @@ def delete_data():
         print("Record deleted successfully.")
         cursor.execute(sql)
         db.commit()
+        pause_system()
     elif delete_option == "2":
         confirm = input(
             "Are you sure you want to delete all records? \nThis action cannot be undone. Enter 'yes' to confirm: ")
@@ -112,8 +140,10 @@ def delete_data():
             cursor.execute(sql)
             db.commit()
             print("All records deleted successfully.")
+            pause_system()
         else:
             print("Deletion canceled.")
+            pause_system()
     elif delete_option == "3":
         pause_system()
     else:
@@ -127,11 +157,14 @@ def filter_records_by_type(data_type):
     cursor.execute(sql, val)
     records = cursor.fetchall()
     if len(records) == 0:
-        print(f"No records found for data type: {data_type}")
+        print(f"\nNo records found for data type: {data_type}")
     else:
-        print("ID\tType         \tValue")
+        print("\nID\tType         \tValue")
+        count = 0  # initialize
         for record in records:
             print(f"{record[0]}\t{record[1]}\t{record[2]}")
+            count += 1  # increment count for each printed value
+        print(f"\nTotal Number of Data: {count}")
 
 
 # function to find duplicate records
@@ -143,9 +176,12 @@ def find_duplicates():
         print("No duplicate records found.")
     else:
         print("\n The Following are Duplicated")
-        print("Type         \tCount\tType")
+        print("Type         \tCount\tValue")
+        tally = 0
         for record in records:
             print(f"{record[0]}\t{record[2]}\t{record[1]}")
+            tally += (record[2])
+        print(f"\n Tally of Duplicates: {tally}")
 
 
 # Main program
@@ -183,6 +219,17 @@ while True:
                 print("Inserted data with ID:", inserted_id)
                 print("Type:", inserted_type)
 
+            if data_type == 'Landline Num':
+                inserted_id, inserted_type = insert_data(data_type, data_value)
+                print("Inserted data with ID:", inserted_id)
+                print("Type:", inserted_type)
+
+            # declares and includes if invalid
+            if data_type == 'Unknown      ':
+                inserted_id, inserted_type = insert_data(data_type, data_value)
+                print("Inserted data with ID:", inserted_id)
+                print("Type:", inserted_type)
+
             continue_choice = input("\nDo you want to add more data? (yes/no): ")
             if continue_choice.lower() != 'yes':
                 break
@@ -214,12 +261,16 @@ while True:
                 print("Inserted data with ID:", updated_id)
                 print("Type:", updated_type)
 
+            if data_type == 'Landline Num':
+                updated_id, updated_type = update_data(id, data_type, data_value)
+                print("Inserted data with ID:", updated_id)
+                print("Type:", updated_type)
+
             continue_choice = input("\nDo you want to update more data? (yes/no): ")
             if continue_choice.lower() != 'yes':
-                break
+                    break
 
     elif choice == '3':
-        print("\n")
         view_all_records()
         pause_system()
 
@@ -229,17 +280,20 @@ while True:
         print("2. Date of Birth")
         print("3. Cellphone Number")
         print("4. Email Address")
-        print("5. Duplicated Data")
+        print("5. Landline Number")
+        print("6. Duplicated Data")
         data_type_choice = input("Enter your choice: ")
         if data_type_choice == '1':
-            filter_records_by_type('Name')
+            filter_records_by_type('Name         ')
         elif data_type_choice == '2':
             filter_records_by_type('Date of Birth')
         elif data_type_choice == '3':
-            filter_records_by_type('CellNum')
+            filter_records_by_type('Cellphone Num')
         elif data_type_choice == '4':
             filter_records_by_type('Email Address')
         elif data_type_choice == '5':
+            filter_records_by_type('Landline Num')
+        elif data_type_choice == '6':
             find_duplicates()
         else:
             print("Invalid choice!")
