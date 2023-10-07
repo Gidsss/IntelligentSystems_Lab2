@@ -1,0 +1,17 @@
+
+"""
+CREATE TABLE `User_Data` (
+  `ID` int NOT NULL AUTO_INCREMENT,
+  `Type` varchar(255) DEFAULT NULL,
+  `Value` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+
+
+CREATE TABLE `Invalid` (
+  `ID` int NOT NULL AUTO_INCREMENT,
+  `Type` varchar(255) DEFAULT NULL,
+  `Value` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+"""
