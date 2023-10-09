@@ -5,7 +5,7 @@ import mysql.connector
 from dateutil import parser
 import re
 
-# Connect to the MySQL database
+# Connect to the MySQL database1
 db = mysql.connector.connect(
     host="localhost",
     user="root",  # your name
@@ -308,3 +308,4 @@ while True:
 
 # Close the connection to the MySQL database
 db.close()
+
